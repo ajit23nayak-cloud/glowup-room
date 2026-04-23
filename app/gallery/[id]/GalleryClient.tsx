@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useAction } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -9,6 +9,7 @@ import ShopSection from "@/components/gallery/ShopSection";
 import SaveBanner from "@/components/gallery/SaveBanner";
 import { capture } from "@/lib/posthog";
 import { STYLE_OPTIONS, type Style } from "@/lib/styles";
+import { getProductsByIds, getProductsForStyle } from "@/lib/shopCatalog";
 
 function isKnownStyle(s: string): s is Style {
   return (STYLE_OPTIONS as readonly string[]).includes(s);
@@ -29,6 +30,15 @@ export default function GalleryClient({ id }: { id: string }) {
       capture("render_generated", { style: render.style, budget: render.budget });
     }
   }, [render?.status, render?.style, render?.budget, render]);
+
+  const products = useMemo(() => {
+    if (!render || !isKnownStyle(render.style)) return [];
+    if (render.selectedProductIds && render.selectedProductIds.length > 0) {
+      return getProductsByIds(render.selectedProductIds);
+    }
+    // Fallback: older renders created before selection was persisted
+    return getProductsForStyle(render.style);
+  }, [render?.selectedProductIds, render?.style, render]);
 
   if (render === undefined) {
     return <main className="p-12 text-center text-ink-muted">Loading…</main>;
@@ -62,7 +72,9 @@ export default function GalleryClient({ id }: { id: string }) {
             afterSrc={render.afterImageUrl}
             className="mb-8"
           />
-          {isKnownStyle(render.style) && <ShopSection style={render.style} />}
+          {isKnownStyle(render.style) && (
+            <ShopSection products={products} style={render.style} budget={render.budget} />
+          )}
           <SaveBanner url={pageUrl} />
           <div className="mt-8">
             <ShareButtons url={pageUrl} style={render.style} />

@@ -22,6 +22,8 @@ export default defineSchema({
     replicatePredictionId: v.optional(v.string()),
     afterImageUrl: v.optional(v.string()),
     errorMessage: v.optional(v.string()),
+    selectedProductIds: v.optional(v.array(v.string())),
+    finalPrompt: v.optional(v.string()),
     createdAt: v.number(),
     completedAt: v.optional(v.number()),
   }).index("by_status_createdAt", ["status", "createdAt"]),

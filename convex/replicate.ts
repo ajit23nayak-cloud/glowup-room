@@ -2,6 +2,8 @@
 import { action, internalAction } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { v } from "convex/values";
+import { selectProducts, parseBudget } from "../lib/selectProducts";
+import type { Style } from "../lib/styles";
 
 const MODEL_VERSION = "76604baddc85b1b4616e1c6475eca080da339c8875bd4996705440484a6eac38";
 
@@ -20,11 +22,16 @@ const CORE_PROMPTS: Record<string, string> = {
   "Scandi-Warm Indian":
     "A scandi-warm Indian living room, off-white walls, natural teak wood floor, light gray linen three-seater sofa, chunky cream knit throw, minimal wooden coffee table with brass inlay, single large monstera plant, warm cream wool rug with subtle Kutch pattern, linen curtains, soft natural light, neutral serene palette with one indigo accent cushion, interior design magazine photography, 4k",
 };
-const STYLE_PROMPT_MAP: Record<string, string> = Object.fromEntries(
-  Object.entries(CORE_PROMPTS).map(([k, v]) => [k, `${PROMPT_PREFIX}${v}${PROMPT_SUFFIX}`]),
-);
+
 const NEGATIVE_PROMPT =
   "cartoon, anime, painting, 3d render, unrealistic, distorted, oversaturated, fake-looking, people, watermark, text";
+
+function buildPrompt(style: string, keywordInjection: string): string {
+  const core = CORE_PROMPTS[style];
+  if (!core) throw new Error(`unknown style: ${style}`);
+  const featuring = keywordInjection ? `, featuring ${keywordInjection}` : "";
+  return `${PROMPT_PREFIX}${core}${featuring}${PROMPT_SUFFIX}`;
+}
 
 async function replicateFetch(path: string, init: RequestInit = {}) {
   const token = process.env.REPLICATE_API_TOKEN;
@@ -53,8 +60,15 @@ export const startRender = action({
   handler: async (ctx, { renderId, beforeStorageId, style }): Promise<void> => {
     const beforeUrl = await ctx.storage.getUrl(beforeStorageId);
     if (!beforeUrl) throw new Error("before image URL unavailable");
-    const prompt = STYLE_PROMPT_MAP[style];
-    if (!prompt) throw new Error(`unknown style: ${style}`);
+    if (!CORE_PROMPTS[style]) throw new Error(`unknown style: ${style}`);
+
+    // Read render to get budget for selection
+    const render = await ctx.runQuery(api.renders.getById, { id: renderId });
+    if (!render) throw new Error("render not found");
+
+    const budgetINR = parseBudget(render.budget);
+    const selection = selectProducts(style as Style, budgetINR);
+    const prompt = buildPrompt(style, selection.keywordInjection);
 
     const prediction = await replicateFetch("/v1/predictions", {
       method: "POST",
@@ -75,6 +89,8 @@ export const startRender = action({
       id: renderId,
       status: "processing",
       replicatePredictionId: prediction.id,
+      selectedProductIds: selection.productIds,
+      finalPrompt: prompt,
     });
 
     await ctx.scheduler.runAfter(3_000, internal.replicate.pollPrediction, {

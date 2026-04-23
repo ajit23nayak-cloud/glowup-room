@@ -3,7 +3,6 @@ import { Lamp, Sofa, Armchair, Palette, Package, Flower2, Square, Table2, Blinds
 import type { LucideIcon } from "lucide-react";
 import { capture } from "@/lib/posthog";
 import {
-  getProductsForStyle,
   getProductUrl,
   CATEGORY_LABELS,
   type ShopCategory,
@@ -31,18 +30,31 @@ const GRADIENTS = [
   "from-[#FCECE8] to-[#F2C2B5]", // pale rose → warm clay
 ];
 
-export default function ShopSection({ style }: { style: Style }) {
-  const products = getProductsForStyle(style);
+type Props = {
+  products: ShopProduct[];
+  style: Style;
+  budget?: string;
+};
+
+export default function ShopSection({ products, style, budget }: Props) {
   if (products.length === 0) return null;
+
+  const n = products.length;
+  const roomLabel = style.toLowerCase();
+  const heading =
+    budget
+      ? `Your ${roomLabel} room, ${budget}`
+      : `Get the look — shop the essentials`;
+  const sub =
+    budget
+      ? `These ${n} product${n === 1 ? "" : "s"} match the vibe. Shop below.`
+      : `Curated Amazon.in picks that match your ${roomLabel} glow-up.`;
 
   return (
     <section className="mt-16 mb-10">
-      <h2 className="font-serif text-3xl text-center mb-2">
-        Get the look — shop the essentials
-      </h2>
+      <h2 className="font-serif text-3xl text-center mb-2">{heading}</h2>
       <p className="text-center text-ink-muted text-[15px] mb-10 max-w-[560px] mx-auto">
-        Curated Amazon.in picks that match your {style.toLowerCase()} glow-up. All tested and shipped
-        in India.
+        {sub}
       </p>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {products.map((p, i) => (

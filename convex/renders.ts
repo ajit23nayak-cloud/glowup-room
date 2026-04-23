@@ -37,6 +37,8 @@ export const setStatus = internalMutation({
     replicatePredictionId: v.optional(v.string()),
     afterImageUrl: v.optional(v.string()),
     errorMessage: v.optional(v.string()),
+    selectedProductIds: v.optional(v.array(v.string())),
+    finalPrompt: v.optional(v.string()),
   },
   handler: async (ctx, { id, status, ...patch }) => {
     const completed = status === "complete" || status === "failed";
