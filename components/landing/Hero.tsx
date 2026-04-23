@@ -32,6 +32,7 @@ export default function Hero() {
         <div className="mb-10">
           <a
             href="/try"
+            onClick={() => capture("landing_try_clicked", { section: "hero" })}
             className="inline-block rounded-full bg-accent text-white font-semibold px-8 py-4 hover:opacity-90 transition-opacity"
           >
             Try it now →
