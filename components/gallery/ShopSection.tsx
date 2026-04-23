@@ -1,22 +1,27 @@
 "use client";
-import { Lamp, Sofa, Armchair, Palette, Package, Flower2 } from "lucide-react";
+import { Lamp, Sofa, Armchair, Palette, Package, Flower2, Square, Table2, Blinds } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { capture } from "@/lib/posthog";
 import {
   getProductsForStyle,
   getProductUrl,
+  CATEGORY_LABELS,
   type ShopCategory,
   type ShopProduct,
 } from "@/lib/shopCatalog";
 import type { Style } from "@/lib/styles";
 
 const ICON_FOR: Record<ShopCategory, LucideIcon> = {
-  "cushion-covers": Sofa,
-  "floor-lamp": Lamp,
+  cushion_cover: Sofa,
   rug: Package,
-  "wall-art": Palette,
-  "side-table": Armchair,
+  sofa: Sofa,
+  armchair: Armchair,
+  coffee_table: Table2,
+  side_table: Square,
+  floor_lamp: Lamp,
+  wall_art: Palette,
   planter: Flower2,
+  curtain_or_throw: Blinds,
 };
 
 // Three warm gradients cycled across tiles so they feel cohesive but not monotonous.
@@ -41,7 +46,13 @@ export default function ShopSection({ style }: { style: Style }) {
       </p>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {products.map((p, i) => (
-          <ProductTile key={p.category} product={p} style={style} position={i} gradient={GRADIENTS[i % GRADIENTS.length]} />
+          <ProductTile
+            key={p.id}
+            product={p}
+            style={style}
+            position={i}
+            gradient={GRADIENTS[i % GRADIENTS.length]}
+          />
         ))}
       </div>
     </section>
@@ -69,7 +80,8 @@ function ProductTile({
       onClick={() =>
         capture("shop_link_clicked", {
           style,
-          product_name: product.title,
+          product_id: product.id,
+          product_name: product.name,
           category: product.category,
           position,
         })
@@ -79,15 +91,25 @@ function ProductTile({
       <div
         className={`relative h-40 flex flex-col items-center justify-center gap-3 bg-gradient-to-br ${gradient}`}
       >
-        <Icon className="w-10 h-10 text-ink-dim/70 group-hover:text-accent transition-colors" strokeWidth={1.5} />
-        <span className="text-[11px] uppercase tracking-[0.15em] text-ink-dim/70 font-medium">
-          {product.categoryLabel}
-        </span>
+        {product.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={product.imageUrl} alt={product.name} className="h-full w-full object-cover" />
+        ) : (
+          <>
+            <Icon
+              className="w-10 h-10 text-ink-dim/70 group-hover:text-accent transition-colors"
+              strokeWidth={1.5}
+            />
+            <span className="text-[11px] uppercase tracking-[0.15em] text-ink-dim/70 font-medium">
+              {CATEGORY_LABELS[product.category]}
+            </span>
+          </>
+        )}
       </div>
       <div className="p-4">
-        <p className="text-[14px] leading-snug text-ink-dim mb-2 line-clamp-2">{product.title}</p>
+        <p className="text-[14px] leading-snug text-ink-dim mb-2 line-clamp-2">{product.name}</p>
         <div className="flex items-baseline justify-between">
-          <span className="font-serif text-lg text-ink">₹{product.priceInr.toLocaleString("en-IN")}</span>
+          <span className="font-serif text-lg text-ink">₹{product.priceINR.toLocaleString("en-IN")}</span>
           <span className="text-[11px] text-accent uppercase tracking-[0.12em] font-semibold">
             Shop →
           </span>
