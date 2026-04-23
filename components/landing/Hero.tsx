@@ -1,0 +1,44 @@
+"use client";
+import BeforeAfterSlider from "@/components/BeforeAfterSlider";
+import WaitlistEmbed from "./WaitlistEmbed";
+import { capture } from "@/lib/posthog";
+
+export default function Hero() {
+  return (
+    <section className="py-20 text-center">
+      <div className="mx-auto max-w-content px-6">
+        <div className="inline-block mb-6 px-3.5 py-1.5 rounded-full bg-accent/10 text-accent text-[13px] font-semibold uppercase tracking-[0.12em]">
+          🪄 Launching Saturday, 25 April · Free for the first 500
+        </div>
+        <h1 className="font-serif font-normal leading-[1.05] tracking-[-0.02em] mb-6 text-[clamp(40px,7vw,72px)]">
+          DecorGPT
+          <br />
+          <em className="italic text-accent">for India.</em>
+        </h1>
+        <p className="text-ink-dim text-[clamp(18px,2.2vw,22px)] max-w-[640px] mx-auto mb-12 leading-[1.5]">
+          Upload a photo of your living room. Pick a vibe. Get an AI makeover + the exact décor to buy on Amazon India — inside your budget, in 60 seconds.
+        </p>
+        <BeforeAfterSlider
+          beforeSrc="/before.jpg"
+          afterSrc="/after.png"
+          beforeAlt="Before — a typical Indian living room"
+          afterAlt="After — styled by GlowUp AI"
+          onFirstEngage={() => capture("slider_engaged", { surface: "hero" })}
+          className="mb-14"
+        />
+        <p className="text-center text-[13px] text-ink-muted italic -mt-8 mb-10">
+          Drag to reveal → one room, two futures.
+        </p>
+        <div className="mb-10">
+          <a
+            href="/try"
+            className="inline-block rounded-full bg-accent text-white font-semibold px-8 py-4 hover:opacity-90 transition-opacity"
+          >
+            Try it now →
+          </a>
+        </div>
+        <WaitlistEmbed />
+      </div>
+    </section>
+  );
+}

@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #FAF7F2;
+  --ink: #1A1A1A;
+  --ink-dim: #4A4A4A;
+  --ink-muted: #7A7A7A;
+  --ink-soft: #B8B2A7;
+  --accent: #E11D48;
+  --accent-warm: #F59E0B;
+  --card: #FFFFFF;
+  --border: #E8E1D4;
+}
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+  line-height: 1.6;
+  font-size: 17px;
+  -webkit-font-smoothing: antialiased;
+}

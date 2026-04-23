@@ -1,0 +1,21 @@
+.vercel
+node_modules
+.next
+out
+.env
+.env.local
+.env*.local
+.convex
+*.log
+.DS_Store
+
+# Convex agent tooling (not app code)
+.agents/
+.claude/
+AGENTS.md
+CLAUDE.md
+skills-lock.json
+
+# Build artifacts
+tsconfig.tsbuildinfo
+next-env.d.ts
