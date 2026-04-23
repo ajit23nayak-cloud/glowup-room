@@ -5,7 +5,14 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
 import ShareButtons from "@/components/share/ShareButtons";
+import ShopSection from "@/components/gallery/ShopSection";
+import SaveBanner from "@/components/gallery/SaveBanner";
 import { capture } from "@/lib/posthog";
+import { STYLE_OPTIONS, type Style } from "@/lib/styles";
+
+function isKnownStyle(s: string): s is Style {
+  return (STYLE_OPTIONS as readonly string[]).includes(s);
+}
 
 export default function GalleryClient({ id }: { id: string }) {
   const render = useQuery(api.renders.getById, { id: id as Id<"renders"> });
@@ -55,7 +62,11 @@ export default function GalleryClient({ id }: { id: string }) {
             afterSrc={render.afterImageUrl}
             className="mb-8"
           />
-          <ShareButtons url={pageUrl} style={render.style} />
+          {isKnownStyle(render.style) && <ShopSection style={render.style} />}
+          <SaveBanner url={pageUrl} />
+          <div className="mt-8">
+            <ShareButtons url={pageUrl} style={render.style} />
+          </div>
           <div className="text-center mt-12">
             <a
               href="/try"
@@ -84,7 +95,7 @@ export default function GalleryClient({ id }: { id: string }) {
           <div className="animate-pulse text-ink-muted">
             {render.status === "pending"
               ? "Queued…"
-              : "AI is styling your room (60–90s)…"}
+              : "AI is styling your room (90–120s)…"}
           </div>
         </div>
       )}

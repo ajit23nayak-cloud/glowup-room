@@ -5,7 +5,12 @@ import { v } from "convex/values";
 
 const MODEL_VERSION = "76604baddc85b1b4616e1c6475eca080da339c8875bd4996705440484a6eac38";
 
-const STYLE_PROMPT_MAP: Record<string, string> = {
+const PROMPT_PREFIX =
+  "photorealistic interior photography, natural daylight, professional real estate listing photo, ultra-detailed, 4k, Indian home aesthetic, ";
+const PROMPT_SUFFIX =
+  ", shot on full-frame DSLR, shallow depth of field, realistic textures, no cartoon, no painted style";
+
+const CORE_PROMPTS: Record<string, string> = {
   "Minimalist Warm":
     "A minimalist warm living room, soft white walls, light oak wood flooring, low-profile beige linen sofa, cream wool rug, single sculptural brass floor lamp, indoor palm plant in terracotta pot, large neutral canvas artwork, natural sunlight, calm uncluttered space, interior design magazine photography, 4k",
   "Boho India":
@@ -15,8 +20,11 @@ const STYLE_PROMPT_MAP: Record<string, string> = {
   "Scandi-Warm Indian":
     "A scandi-warm Indian living room, off-white walls, natural teak wood floor, light gray linen three-seater sofa, chunky cream knit throw, minimal wooden coffee table with brass inlay, single large monstera plant, warm cream wool rug with subtle Kutch pattern, linen curtains, soft natural light, neutral serene palette with one indigo accent cushion, interior design magazine photography, 4k",
 };
+const STYLE_PROMPT_MAP: Record<string, string> = Object.fromEntries(
+  Object.entries(CORE_PROMPTS).map(([k, v]) => [k, `${PROMPT_PREFIX}${v}${PROMPT_SUFFIX}`]),
+);
 const NEGATIVE_PROMPT =
-  "cluttered, messy, low quality, blurry, distorted furniture, unrealistic perspective, cartoon, oversaturated, dark, dingy, people, watermark, text";
+  "cartoon, anime, painting, 3d render, unrealistic, distorted, oversaturated, fake-looking, people, watermark, text";
 
 async function replicateFetch(path: string, init: RequestInit = {}) {
   const token = process.env.REPLICATE_API_TOKEN;
@@ -56,8 +64,8 @@ export const startRender = action({
           image: beforeUrl,
           prompt,
           negative_prompt: NEGATIVE_PROMPT,
-          guidance_scale: 15,
-          num_inference_steps: 50,
+          guidance_scale: 18,
+          num_inference_steps: 65,
           prompt_strength: 0.8,
         },
       }),
