@@ -7,32 +7,33 @@ import type { Style } from "../lib/styles";
 
 const MAX_FAILED_RETRIES = 3;
 
-const MODEL_VERSION = "76604baddc85b1b4616e1c6475eca080da339c8875bd4996705440484a6eac38";
+// Flux Kontext Pro is an official Replicate model — no version hash needed,
+// POST to the model-scoped predictions endpoint.
+const MODEL_OWNER = "black-forest-labs";
+const MODEL_NAME = "flux-kontext-pro";
 
-const PROMPT_PREFIX =
-  "photorealistic interior photography, natural daylight, professional real estate listing photo, ultra-detailed, 4k, Indian home aesthetic, ";
-const PROMPT_SUFFIX =
-  ", shot on full-frame DSLR, shallow depth of field, realistic textures, no cartoon, no painted style";
-
-const CORE_PROMPTS: Record<string, string> = {
-  "Minimalist Warm":
-    "A minimalist warm living room, soft white walls, light oak wood flooring, low-profile beige linen sofa, cream wool rug, single sculptural brass floor lamp, indoor palm plant in terracotta pot, large neutral canvas artwork, natural sunlight, calm uncluttered space, interior design magazine photography, 4k",
-  "Boho India":
-    "A boho Indian living room, jewel-toned walls in deep emerald, a low-slung fabric sofa in cream with jewel-tone velvet cushions, Jaipur block-print floor cushions, brass peacock wall art, hanging rattan pendant lamp, Persian rug in deep red and indigo, indoor money plant in hand-painted ceramic pot, warm tungsten lighting, rich textures, interior design magazine photography, 4k",
-  "Indian Contemporary":
-    "An Indian contemporary living room, warm off-white walls with one accent wall in deep teal, low wooden sofa with mustard and terracotta cushions, brass coffee table, large monstera plant, Kutch embroidered wall hanging, brass floor lamp, warm lighting, layered textiles, interior design magazine photography, 4k",
-  "Scandi-Warm Indian":
-    "A scandi-warm Indian living room, off-white walls, natural teak wood floor, light gray linen three-seater sofa, chunky cream knit throw, minimal wooden coffee table with brass inlay, single large monstera plant, warm cream wool rug with subtle Kutch pattern, linen curtains, soft natural light, neutral serene palette with one indigo accent cushion, interior design magazine photography, 4k",
+// Per-style natural-language label that reads cleanly inside the prompt sentence.
+const STYLE_LABEL: Record<string, string> = {
+  "Minimalist Warm": "minimalist warm Indian",
+  "Boho India": "boho Indian",
+  "Indian Contemporary": "contemporary Indian",
+  "Scandi-Warm Indian": "Scandi-warm Indian",
 };
 
-const NEGATIVE_PROMPT =
-  "cartoon, anime, painting, 3d render, unrealistic, distorted, oversaturated, fake-looking, people, watermark, text";
+function joinProse(items: string[]): string {
+  const clean = items.filter((s) => s && s.trim().length > 0);
+  if (clean.length === 0) return "";
+  if (clean.length === 1) return clean[0];
+  if (clean.length === 2) return `${clean[0]} and ${clean[1]}`;
+  return `${clean.slice(0, -1).join(", ")}, and ${clean[clean.length - 1]}`;
+}
 
-function buildPrompt(style: string, keywordInjection: string): string {
-  const core = CORE_PROMPTS[style];
-  if (!core) throw new Error(`unknown style: ${style}`);
-  const featuring = keywordInjection ? `, featuring ${keywordInjection}` : "";
-  return `${PROMPT_PREFIX}${core}${featuring}${PROMPT_SUFFIX}`;
+function buildPrompt(style: string, visualKeywords: string[]): string {
+  const label = STYLE_LABEL[style];
+  if (!label) throw new Error(`unknown style: ${style}`);
+  const prose = joinProse(visualKeywords);
+  const features = prose ? ` The space features ${prose}.` : "";
+  return `Transform this room into a ${label} living space.${features} Natural daylight, photorealistic, shot on full-frame DSLR.`;
 }
 
 async function replicateFetch(path: string, init: RequestInit = {}) {
@@ -62,30 +63,32 @@ export const startRender = action({
   handler: async (ctx, { renderId, beforeStorageId, style }): Promise<void> => {
     const beforeUrl = await ctx.storage.getUrl(beforeStorageId);
     if (!beforeUrl) throw new Error("before image URL unavailable");
-    if (!CORE_PROMPTS[style]) throw new Error(`unknown style: ${style}`);
+    if (!STYLE_LABEL[style]) throw new Error(`unknown style: ${style}`);
 
-    // Read render to get budget for selection
+    // Pull budget from the render row for product selection
     const render = await ctx.runQuery(api.renders.getById, { id: renderId });
     if (!render) throw new Error("render not found");
 
     const budgetINR = parseBudget(render.budget);
     const selection = selectProducts(style as Style, budgetINR);
-    const prompt = buildPrompt(style, selection.keywordInjection);
+    const visualKeywords = selection.products.map((p) => p.visualKeyword);
+    const prompt = buildPrompt(style, visualKeywords);
 
-    const prediction = await replicateFetch("/v1/predictions", {
-      method: "POST",
-      body: JSON.stringify({
-        version: MODEL_VERSION,
-        input: {
-          image: beforeUrl,
-          prompt,
-          negative_prompt: NEGATIVE_PROMPT,
-          guidance_scale: 18,
-          num_inference_steps: 65,
-          prompt_strength: 0.8,
-        },
-      }),
-    });
+    const prediction = await replicateFetch(
+      `/v1/models/${MODEL_OWNER}/${MODEL_NAME}/predictions`,
+      {
+        method: "POST",
+        body: JSON.stringify({
+          input: {
+            prompt,
+            input_image: beforeUrl,
+            aspect_ratio: "16:9",
+            output_format: "jpg",
+            safety_tolerance: 2,
+          },
+        }),
+      },
+    );
 
     await ctx.runMutation(internal.renders.setStatus, {
       id: renderId,

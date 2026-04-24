@@ -29,8 +29,13 @@ export default function GalleryClient({ id }: { id: string }) {
     if (render.status === "complete" && !firedRef.current) {
       firedRef.current = true;
       capture("render_generated", { style: render.style, budget: render.budget });
+      capture("flux_kontext_render_complete", {
+        style: render.style,
+        budget: render.budget,
+        heroConditioned: render.heroConditioned ?? false,
+      });
     }
-  }, [render?.status, render?.style, render?.budget, render]);
+  }, [render?.status, render?.style, render?.budget, render?.heroConditioned, render]);
 
   const products = useMemo(() => {
     if (!render || !isKnownStyle(render.style)) return [];

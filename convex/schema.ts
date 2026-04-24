@@ -49,6 +49,8 @@ export default defineSchema({
     finalPrompt: v.optional(v.string()),
     sofaOmittedForBudget: v.optional(v.boolean()),
     minSofaPriceINR: v.optional(v.number()),
+    heroProductId: v.optional(v.string()),
+    heroConditioned: v.optional(v.boolean()),
     createdAt: v.number(),
     completedAt: v.optional(v.number()),
   }).index("by_status_createdAt", ["status", "createdAt"]),
