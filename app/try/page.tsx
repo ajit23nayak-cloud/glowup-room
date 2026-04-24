@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useAction } from "convex/react";
+import { ConvexError } from "convex/values";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import PhotoUpload from "@/components/try/PhotoUpload";
@@ -9,6 +10,16 @@ import StylePicker from "@/components/try/StylePicker";
 import BudgetChips from "@/components/try/BudgetChips";
 import { capture, identify } from "@/lib/posthog";
 import type { Style, Budget } from "@/lib/styles";
+
+type PaywallPayload = { code: "paywall"; upgradeUrl: string; rendersCompleted?: number };
+function paywallPayload(e: unknown): PaywallPayload | null {
+  if (!(e instanceof ConvexError)) return null;
+  const data = (e as ConvexError<{ code?: string; upgradeUrl?: string; rendersCompleted?: number }>).data;
+  if (data && typeof data === "object" && data.code === "paywall" && typeof data.upgradeUrl === "string") {
+    return { code: "paywall", upgradeUrl: data.upgradeUrl, rendersCompleted: data.rendersCompleted };
+  }
+  return null;
+}
 
 export default function TryPage() {
   const router = useRouter();
@@ -52,6 +63,16 @@ export default function TryPage() {
       await startRender({ renderId, beforeStorageId: storageId, style });
       router.push(`/gallery/${renderId}`);
     } catch (e: unknown) {
+      const pw = paywallPayload(e);
+      if (pw) {
+        capture("paywall_hit", {
+          from: "try_submit",
+          rendersCompleted: pw.rendersCompleted ?? null,
+          email,
+        });
+        router.push(`${pw.upgradeUrl}?from=try`);
+        return;
+      }
       setErr(e instanceof Error ? e.message : "something went wrong");
       setSubmitting(false);
     }

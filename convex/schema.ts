@@ -6,6 +6,9 @@ export default defineSchema({
     email: v.string(),
     createdAt: v.number(),
     source: v.union(v.literal("landing"), v.literal("try")),
+    rendersCompleted: v.optional(v.number()),
+    paidTier: v.optional(v.boolean()),
+    paidTierExpiresAt: v.optional(v.number()),
   }).index("by_email", ["email"]),
 
   renders: defineTable({

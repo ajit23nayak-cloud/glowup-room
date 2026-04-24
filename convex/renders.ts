@@ -1,5 +1,5 @@
 import { mutation, query, internalMutation } from "./_generated/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 
 export const create = mutation({
   args: {
@@ -8,12 +8,27 @@ export const create = mutation({
     style: v.string(),
     budget: v.string(),
   },
-  handler: async (ctx, args) =>
-    await ctx.db.insert("renders", {
+  handler: async (ctx, args) => {
+    // Paywall gate — 1 free successful render per email.
+    const signup = await ctx.db.get(args.signupId);
+    if (!signup) throw new ConvexError({ code: "signup_missing" });
+    const rendersCompleted = signup.rendersCompleted ?? 0;
+    const paidTier = signup.paidTier ?? false;
+    const expiresAt = signup.paidTierExpiresAt;
+    const paidActive = paidTier && (!expiresAt || expiresAt > Date.now());
+    if (rendersCompleted >= 1 && !paidActive) {
+      throw new ConvexError({
+        code: "paywall",
+        upgradeUrl: "/upgrade",
+        rendersCompleted,
+      });
+    }
+    return await ctx.db.insert("renders", {
       ...args,
       status: "pending",
       createdAt: Date.now(),
-    }),
+    });
+  },
 });
 
 export const getById = query({
@@ -43,6 +58,9 @@ export const setStatus = internalMutation({
     minSofaPriceINR: v.optional(v.number()),
   },
   handler: async (ctx, { id, status, ...patch }) => {
+    const render = await ctx.db.get(id);
+    if (!render) return;
+    const wasComplete = render.status === "complete";
     const completed = status === "complete" || status === "failed";
     const clearOnRetry = status === "processing" ? { errorMessage: undefined, afterImageUrl: undefined } : {};
     await ctx.db.patch(id, {
@@ -51,5 +69,14 @@ export const setStatus = internalMutation({
       ...patch,
       ...(completed ? { completedAt: Date.now() } : {}),
     });
+    // Only increment the signup's free-render counter on first successful complete.
+    if (status === "complete" && !wasComplete && render.signupId) {
+      const signup = await ctx.db.get(render.signupId);
+      if (signup) {
+        await ctx.db.patch(render.signupId, {
+          rendersCompleted: (signup.rendersCompleted ?? 0) + 1,
+        });
+      }
+    }
   },
 });
