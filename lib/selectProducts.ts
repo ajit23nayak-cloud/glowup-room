@@ -18,23 +18,7 @@ export function parseBudget(budget: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-type Required = { cat: ShopCategory; count: number };
-
-// Priority for "the glow-up essentials." Sofa and rug define the room; cushions
-// add styling; lamp/art/planter/side table are finishing touches.
-const REQUIRED: Required[] = [
-  { cat: "sofa", count: 1 },
-  { cat: "rug", count: 1 },
-  { cat: "cushion_cover", count: 2 },
-  { cat: "floor_lamp", count: 1 },
-  { cat: "wall_art", count: 1 },
-  { cat: "planter", count: 1 },
-  { cat: "side_table", count: 1 },
-];
-const EXTRAS: ShopCategory[] = ["coffee_table", "armchair", "curtain_or_throw"];
-
-const MIN_PRODUCTS = 2;
-const MAX_PRODUCTS = 12;
+const MAX_PRODUCTS = 6;
 const MAX_KEYWORD_WORDS = 25; // approx 40 CLIP tokens — hard cap per spec
 
 export type Selection = {
@@ -47,9 +31,18 @@ export type Selection = {
 };
 
 /**
- * Greedy budget-fit selection. Covers required categories cheapest-first so every
- * glow-up gets a sofa/rug/cushions/etc. where possible, then fills with extras
- * while budget remains. Caps at 12 products total.
+ * 6-slot fixed selection — matches what Flux Kontext actually renders on screen,
+ * avoiding the "listing has 9 items but only 5 appear in render" credibility gap.
+ *
+ *   1. sofa (skip if min sofa > budget; sofaOmittedForBudget flag signals warning)
+ *   2. rug
+ *   3. cushion covers (set 1)
+ *   4. floor lamp
+ *   5. coffee table, fallback to side table
+ *   6. accent — pick the first that fits from: cushion covers #2, wall art, planter
+ *
+ * Each slot is cheapest-fit within its category. If a slot's category is empty
+ * OR nothing fits remaining budget, that slot stays empty. Result is 0-6 items.
  */
 export function selectProducts(style: Style, budgetINR: number): Selection {
   const byCategory = new Map<ShopCategory, ShopProduct[]>();
@@ -68,7 +61,8 @@ export function selectProducts(style: Style, budgetINR: number): Selection {
   const picked: ShopProduct[] = [];
   const pickedIds = new Set<string>();
 
-  const tryPickFrom = (cat: ShopCategory) => {
+  /** Try the cheapest not-yet-picked item in cat that fits. Returns true on pick. */
+  const tryPickFrom = (cat: ShopCategory): boolean => {
     const pool = byCategory.get(cat) ?? [];
     for (const p of pool) {
       if (pickedIds.has(p.id)) continue;
@@ -82,37 +76,29 @@ export function selectProducts(style: Style, budgetINR: number): Selection {
     return false;
   };
 
-  // Pass 1: required categories (cheapest-first)
-  for (const { cat, count } of REQUIRED) {
-    for (let i = 0; i < count; i++) {
-      if (picked.length >= MAX_PRODUCTS) break;
-      tryPickFrom(cat);
-    }
-  }
+  /** First hit across a preference-ordered list of categories. */
+  const tryPickFromAny = (cats: ShopCategory[]): boolean => {
+    for (const c of cats) if (tryPickFrom(c)) return true;
+    return false;
+  };
 
-  // Pass 2: extras, one per category
-  for (const cat of EXTRAS) {
-    if (picked.length >= MAX_PRODUCTS) break;
-    tryPickFrom(cat);
-  }
+  // Slot 1: sofa
+  if (!sofaOmittedForBudget && picked.length < MAX_PRODUCTS) tryPickFrom("sofa");
 
-  // Pass 3: backfill — any remaining product cheapest-first if budget allows and
-  // we're under MAX_PRODUCTS (helps higher budgets reach the 8-12 target)
-  if (picked.length < MAX_PRODUCTS) {
-    const all = [...getProductsByStyle(style)].sort((a, b) => a.priceINR - b.priceINR);
-    for (const p of all) {
-      if (picked.length >= MAX_PRODUCTS) break;
-      if (pickedIds.has(p.id)) continue;
-      if (p.priceINR <= remaining) {
-        picked.push(p);
-        pickedIds.add(p.id);
-        remaining -= p.priceINR;
-      }
-    }
-  }
+  // Slot 2: rug
+  if (picked.length < MAX_PRODUCTS) tryPickFrom("rug");
 
-  // At very low budgets, ensure we return at least MIN_PRODUCTS even if under-budget
-  // (no-op if we already have ≥ MIN).
+  // Slot 3: cushion covers (set 1)
+  if (picked.length < MAX_PRODUCTS) tryPickFrom("cushion_cover");
+
+  // Slot 4: floor lamp
+  if (picked.length < MAX_PRODUCTS) tryPickFrom("floor_lamp");
+
+  // Slot 5: coffee table, fallback to side table
+  if (picked.length < MAX_PRODUCTS) tryPickFromAny(["coffee_table", "side_table"]);
+
+  // Slot 6: accent — cushion covers #2, then wall art, then planter
+  if (picked.length < MAX_PRODUCTS) tryPickFromAny(["cushion_cover", "wall_art", "planter"]);
 
   const totalPriceINR = picked.reduce((n, p) => n + p.priceINR, 0);
   return {

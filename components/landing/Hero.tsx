@@ -16,7 +16,7 @@ export default function Hero() {
           <em className="italic text-accent">for India.</em>
         </h1>
         <p className="text-ink-dim text-[clamp(18px,2.2vw,22px)] max-w-[640px] mx-auto mb-12 leading-[1.5]">
-          Upload a photo of your living room. Pick a vibe. Get an AI makeover + the exact décor to buy on Amazon India — inside your budget, in 60 seconds.
+          AI preview of your room + handpicked Amazon India products to match. First render free — ₹99 unlocks unlimited for 24 hours.
         </p>
         <BeforeAfterSlider
           beforeSrc="/before.jpg"

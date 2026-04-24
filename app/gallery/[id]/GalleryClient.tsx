@@ -68,7 +68,7 @@ export default function GalleryClient({ id }: { id: string }) {
       <a href="/" className="text-sm text-ink-muted hover:text-accent">
         ← GlowUp.room
       </a>
-      <h1 className="font-serif text-4xl mt-4 mb-2">{render.style}</h1>
+      <h1 className="font-serif text-4xl mt-4 mb-2">Your {render.style} style package</h1>
       <p className="text-ink-muted mb-8">Budget: {render.budget}</p>
 
       {render.status === "complete" && render.afterImageUrl && render.beforeUrl ? (
@@ -76,8 +76,11 @@ export default function GalleryClient({ id }: { id: string }) {
           <BeforeAfterSlider
             beforeSrc={render.beforeUrl}
             afterSrc={render.afterImageUrl}
-            className="mb-8"
+            className="mb-6"
           />
+          <p className="text-[13px] text-ink-muted italic text-center max-w-[620px] mx-auto mb-10 leading-relaxed">
+            AI preview shows the full styled vision. The shopping list below is tuned to your {render.budget} budget — layer it into your existing space to get this look.
+          </p>
           {isKnownStyle(render.style) && (
             <ShopSection
               products={products}

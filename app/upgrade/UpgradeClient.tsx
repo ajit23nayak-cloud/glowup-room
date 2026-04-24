@@ -120,8 +120,11 @@ export default function UpgradeClient() {
           <h1 className="font-serif text-[clamp(32px,6vw,52px)] leading-[1.05] tracking-[-0.02em] mb-4">
             Try another style for <em className="italic text-accent">₹99.</em>
           </h1>
-          <p className="text-ink-dim text-[clamp(16px,2vw,18px)] max-w-[520px] mx-auto leading-[1.5]">
+          <p className="text-ink-dim text-[clamp(16px,2vw,18px)] max-w-[520px] mx-auto leading-[1.5] mb-3">
             Pay ₹99 via UPI. Unlocks <strong className="text-ink">unlimited renders for 24 hours</strong>.
+          </p>
+          <p className="text-[13px] text-ink-muted italic max-w-[520px] mx-auto leading-relaxed">
+            Solo-built indie app. First render is on us — ₹99 unlocks unlimited for 24 hours and keeps us alive.
           </p>
         </div>
 
