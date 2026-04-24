@@ -42,6 +42,8 @@ export type Selection = {
   productIds: string[];
   keywordInjection: string; // "" when nothing selected
   totalPriceINR: number;
+  sofaOmittedForBudget: boolean;
+  minSofaPriceINR: number; // min sofa price for this style (for warning copy)
 };
 
 /**
@@ -57,6 +59,10 @@ export function selectProducts(style: Style, budgetINR: number): Selection {
     byCategory.set(p.category, list);
   }
   for (const list of byCategory.values()) list.sort((a, b) => a.priceINR - b.priceINR);
+
+  const sofaPool = byCategory.get("sofa") ?? [];
+  const minSofaPriceINR = sofaPool.length > 0 ? sofaPool[0].priceINR : 0;
+  const sofaOmittedForBudget = minSofaPriceINR > budgetINR;
 
   let remaining = budgetINR;
   const picked: ShopProduct[] = [];
@@ -114,6 +120,8 @@ export function selectProducts(style: Style, budgetINR: number): Selection {
     productIds: picked.map((p) => p.id),
     keywordInjection: buildKeywordInjection(picked.map((p) => p.visualKeyword)),
     totalPriceINR,
+    sofaOmittedForBudget,
+    minSofaPriceINR,
   };
 }
 

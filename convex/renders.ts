@@ -39,6 +39,8 @@ export const setStatus = internalMutation({
     errorMessage: v.optional(v.string()),
     selectedProductIds: v.optional(v.array(v.string())),
     finalPrompt: v.optional(v.string()),
+    sofaOmittedForBudget: v.optional(v.boolean()),
+    minSofaPriceINR: v.optional(v.number()),
   },
   handler: async (ctx, { id, status, ...patch }) => {
     const completed = status === "complete" || status === "failed";

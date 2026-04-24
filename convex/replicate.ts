@@ -91,6 +91,8 @@ export const startRender = action({
       replicatePredictionId: prediction.id,
       selectedProductIds: selection.productIds,
       finalPrompt: prompt,
+      sofaOmittedForBudget: selection.sofaOmittedForBudget,
+      minSofaPriceINR: selection.minSofaPriceINR,
     });
 
     await ctx.scheduler.runAfter(3_000, internal.replicate.pollPrediction, {

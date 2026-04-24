@@ -1,5 +1,5 @@
 "use client";
-import { Lamp, Sofa, Armchair, Palette, Package, Flower2, Square, Table2, Blinds } from "lucide-react";
+import { Lamp, Sofa, Armchair, Palette, Package, Flower2, Square, Table2, Blinds, Info } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { capture } from "@/lib/posthog";
 import {
@@ -34,10 +34,20 @@ type Props = {
   products: ShopProduct[];
   style: Style;
   budget?: string;
+  sofaOmittedForBudget?: boolean;
+  minSofaPriceINR?: number;
+  budgetINR?: number;
 };
 
-export default function ShopSection({ products, style, budget }: Props) {
-  if (products.length === 0) return null;
+export default function ShopSection({
+  products,
+  style,
+  budget,
+  sofaOmittedForBudget,
+  minSofaPriceINR,
+  budgetINR,
+}: Props) {
+  if (products.length === 0 && !sofaOmittedForBudget) return null;
 
   const n = products.length;
   const roomLabel = style.toLowerCase();
@@ -56,6 +66,14 @@ export default function ShopSection({ products, style, budget }: Props) {
       <p className="text-center text-ink-muted text-[15px] mb-10 max-w-[560px] mx-auto">
         {sub}
       </p>
+      {sofaOmittedForBudget && minSofaPriceINR ? (
+        <SofaOmittedCard
+          budget={budget}
+          budgetINR={budgetINR}
+          minSofaPriceINR={minSofaPriceINR}
+          style={style}
+        />
+      ) : null}
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {products.map((p, i) => (
           <ProductTile
@@ -68,6 +86,39 @@ export default function ShopSection({ products, style, budget }: Props) {
         ))}
       </div>
     </section>
+  );
+}
+
+function SofaOmittedCard({
+  budget,
+  budgetINR,
+  minSofaPriceINR,
+  style,
+}: {
+  budget?: string;
+  budgetINR?: number;
+  minSofaPriceINR: number;
+  style: Style;
+}) {
+  // Round min sofa price to nearest ₹K for display
+  const minK = Math.round(minSofaPriceINR / 1000);
+  const gapRaw = budgetINR ? Math.max(0, minSofaPriceINR - budgetINR) : 0;
+  // Round gap UP to the nearest ₹1K for a clean number
+  const gapK = gapRaw > 0 ? Math.ceil(gapRaw / 1000) : 0;
+  return (
+    <div className="mb-8 rounded-2xl border border-accent/20 bg-accent/5 p-5 md:p-6 flex gap-4">
+      <Info className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" strokeWidth={2} />
+      <div className="text-[14px] leading-snug text-ink-dim">
+        <p className="mb-1 text-ink font-semibold">
+          Your {budget ?? `₹${budgetINR ?? "?"}`} budget doesn&apos;t cover a sofa in the{" "}
+          {style} range (min ₹{minK}K).
+        </p>
+        <p>
+          We styled around your existing sofa.
+          {gapK > 0 ? ` Add ₹${gapK}K to unlock sofa options.` : ""}
+        </p>
+      </div>
+    </div>
   );
 }
 

@@ -10,6 +10,7 @@ import SaveBanner from "@/components/gallery/SaveBanner";
 import { capture } from "@/lib/posthog";
 import { STYLE_OPTIONS, type Style } from "@/lib/styles";
 import { getProductsByIds, getProductsForStyle } from "@/lib/shopCatalog";
+import { parseBudget } from "@/lib/selectProducts";
 
 function isKnownStyle(s: string): s is Style {
   return (STYLE_OPTIONS as readonly string[]).includes(s);
@@ -73,7 +74,14 @@ export default function GalleryClient({ id }: { id: string }) {
             className="mb-8"
           />
           {isKnownStyle(render.style) && (
-            <ShopSection products={products} style={render.style} budget={render.budget} />
+            <ShopSection
+              products={products}
+              style={render.style}
+              budget={render.budget}
+              sofaOmittedForBudget={render.sofaOmittedForBudget}
+              minSofaPriceINR={render.minSofaPriceINR}
+              budgetINR={parseBudget(render.budget)}
+            />
           )}
           <SaveBanner url={pageUrl} />
           <div className="mt-8">
