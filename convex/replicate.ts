@@ -28,12 +28,24 @@ function joinProse(items: string[]): string {
   return `${clean.slice(0, -1).join(", ")}, and ${clean[clean.length - 1]}`;
 }
 
+// Cap the injected keywords at the top-5 highest-priority items — budget order
+// already yields sofa/rug/2x cushions/lamp first (highest visual impact), with
+// tail items (side tables, curtains, wall art) dropped to keep prompt tight and
+// reduce hallucination.
+const MAX_KEYWORDS_INJECTED = 5;
+
+const PRESERVE_CLAUSE =
+  "Preserve the exact walls, windows, doors, and architectural layout of this room. " +
+  "Only replace or add furniture, rugs, cushions, lamps, and decor items. " +
+  "Do not invent new windows, walls, or structural features.";
+
 function buildPrompt(style: string, visualKeywords: string[]): string {
   const label = STYLE_LABEL[style];
   if (!label) throw new Error(`unknown style: ${style}`);
-  const prose = joinProse(visualKeywords);
+  const top = visualKeywords.slice(0, MAX_KEYWORDS_INJECTED);
+  const prose = joinProse(top);
   const features = prose ? ` The space features ${prose}.` : "";
-  return `Transform this room into a ${label} living space.${features} Natural daylight, photorealistic, shot on full-frame DSLR.`;
+  return `${PRESERVE_CLAUSE} Redecorate this room in ${label} style.${features} Natural daylight, photorealistic, shot on full-frame DSLR.`;
 }
 
 async function replicateFetch(path: string, init: RequestInit = {}) {
@@ -82,7 +94,7 @@ export const startRender = action({
           input: {
             prompt,
             input_image: beforeUrl,
-            aspect_ratio: "16:9",
+            aspect_ratio: "match_input_image",
             output_format: "jpg",
             safety_tolerance: 2,
           },
