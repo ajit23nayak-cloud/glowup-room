@@ -102,13 +102,23 @@ export default function GalleryClient({ id }: { id: string }) {
           {render.errorMessage && (
             <p className="text-sm text-ink-muted mb-6">{render.errorMessage}</p>
           )}
-          <button
-            onClick={handleRetry}
-            disabled={retrying}
-            className="rounded-full bg-accent text-white font-semibold px-6 py-3 disabled:opacity-50"
-          >
-            {retrying ? "Retrying…" : "Try again"}
-          </button>
+          {(render.failedRenderAttempts ?? 0) >= 3 ? (
+            <p className="text-sm text-ink-dim max-w-md mx-auto">
+              Service hiccup — this keeps failing on our side. Please contact support at{" "}
+              <a href="mailto:hsaritha13@gmail.com" className="text-accent">
+                hsaritha13@gmail.com
+              </a>{" "}
+              and we&apos;ll sort it out.
+            </p>
+          ) : (
+            <button
+              onClick={handleRetry}
+              disabled={retrying}
+              className="rounded-full bg-accent text-white font-semibold px-6 py-3 disabled:opacity-50"
+            >
+              {retrying ? "Retrying…" : "Try again"}
+            </button>
+          )}
         </div>
       ) : (
         <div className="text-center py-12">

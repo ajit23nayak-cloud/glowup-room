@@ -1,9 +1,11 @@
 "use node";
 import { action, internalAction } from "./_generated/server";
 import { api, internal } from "./_generated/api";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { selectProducts, parseBudget } from "../lib/selectProducts";
 import type { Style } from "../lib/styles";
+
+const MAX_FAILED_RETRIES = 3;
 
 const MODEL_VERSION = "76604baddc85b1b4616e1c6475eca080da339c8875bd4996705440484a6eac38";
 
@@ -149,6 +151,12 @@ export const retryRender = action({
   handler: async (ctx, { renderId }): Promise<void> => {
     const render = await ctx.runQuery(api.renders.getById, { id: renderId });
     if (!render) throw new Error("render not found");
+    if ((render.failedRenderAttempts ?? 0) >= MAX_FAILED_RETRIES) {
+      throw new ConvexError({
+        code: "retry_cap_reached",
+        message: "Too many failed attempts on this account. Please contact support.",
+      });
+    }
     await ctx.runAction(api.replicate.startRender, {
       renderId,
       beforeStorageId: render.beforeStorageId,

@@ -7,9 +7,29 @@ export default defineSchema({
     createdAt: v.number(),
     source: v.union(v.literal("landing"), v.literal("try")),
     rendersCompleted: v.optional(v.number()),
+    failedRenderAttempts: v.optional(v.number()),
     paidTier: v.optional(v.boolean()),
     paidTierExpiresAt: v.optional(v.number()),
   }).index("by_email", ["email"]),
+
+  payments: defineTable({
+    email: v.string(),
+    signupId: v.id("signups"),
+    utr: v.string(),
+    amount: v.number(),
+    status: v.union(
+      v.literal("pending_verification"),
+      v.literal("verified"),
+      v.literal("rejected"),
+    ),
+    submittedAt: v.number(),
+    verifiedAt: v.optional(v.number()),
+    rejectedAt: v.optional(v.number()),
+    adminNote: v.optional(v.string()),
+  })
+    .index("by_status_submittedAt", ["status", "submittedAt"])
+    .index("by_utr", ["utr"])
+    .index("by_email", ["email"]),
 
   renders: defineTable({
     signupId: v.id("signups"),

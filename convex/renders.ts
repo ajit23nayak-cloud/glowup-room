@@ -37,7 +37,9 @@ export const getById = query({
     const r = await ctx.db.get(id);
     if (!r) return null;
     const beforeUrl = await ctx.storage.getUrl(r.beforeStorageId);
-    return { ...r, beforeUrl };
+    const signup = await ctx.db.get(r.signupId);
+    const failedRenderAttempts = signup?.failedRenderAttempts ?? 0;
+    return { ...r, beforeUrl, failedRenderAttempts };
   },
 });
 
@@ -75,6 +77,16 @@ export const setStatus = internalMutation({
       if (signup) {
         await ctx.db.patch(render.signupId, {
           rendersCompleted: (signup.rendersCompleted ?? 0) + 1,
+        });
+      }
+    }
+    // Track failed render attempts per signup — protects Replicate budget from
+    // runaway retries on a broken render. UI caps retry button at 3.
+    if (status === "failed" && render.status !== "failed" && render.signupId) {
+      const signup = await ctx.db.get(render.signupId);
+      if (signup) {
+        await ctx.db.patch(render.signupId, {
+          failedRenderAttempts: (signup.failedRenderAttempts ?? 0) + 1,
         });
       }
     }

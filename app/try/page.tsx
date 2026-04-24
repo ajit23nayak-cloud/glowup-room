@@ -70,7 +70,7 @@ export default function TryPage() {
           rendersCompleted: pw.rendersCompleted ?? null,
           email,
         });
-        router.push(`${pw.upgradeUrl}?from=try`);
+        router.push(`${pw.upgradeUrl}?from=try&email=${encodeURIComponent(email)}`);
         return;
       }
       setErr(e instanceof Error ? e.message : "something went wrong");
