@@ -3,6 +3,7 @@ export const STYLE_OPTIONS = [
   "Boho India",
   "Indian Contemporary",
   "Scandi-Warm Indian",
+  "Japandi",
 ] as const;
 export type Style = (typeof STYLE_OPTIONS)[number];
 

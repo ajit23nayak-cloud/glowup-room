@@ -18,6 +18,7 @@ const STYLE_LABEL: Record<string, string> = {
   "Boho India": "boho Indian",
   "Indian Contemporary": "contemporary Indian",
   "Scandi-Warm Indian": "Scandi-warm Indian",
+  Japandi: "Japandi (Japanese minimalism with Scandinavian warmth)",
 };
 
 function joinProse(items: string[]): string {

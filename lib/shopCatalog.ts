@@ -16,7 +16,8 @@ export type StyleTag =
   | "minimalist_warm"
   | "boho_india"
   | "indian_contemporary"
-  | "scandi_warm_indian";
+  | "scandi_warm_indian"
+  | "japandi";
 
 export type ShopProduct = {
   id: string;
@@ -37,6 +38,7 @@ export const STYLE_TO_TAG: Record<Style, StyleTag> = {
   "Boho India": "boho_india",
   "Indian Contemporary": "indian_contemporary",
   "Scandi-Warm Indian": "scandi_warm_indian",
+  Japandi: "japandi",
 };
 
 export const TAG_TO_STYLE: Record<StyleTag, Style> = {
@@ -44,6 +46,7 @@ export const TAG_TO_STYLE: Record<StyleTag, Style> = {
   boho_india: "Boho India",
   indian_contemporary: "Indian Contemporary",
   scandi_warm_indian: "Scandi-Warm Indian",
+  japandi: "Japandi",
 };
 
 export const CATEGORY_LABELS: Record<ShopCategory, string> = {
@@ -223,6 +226,57 @@ export const SHOP_CATALOG: ShopProduct[] = [
   { id: "sw_cw_1", name: "Off-white linen curtains, set of 2, 54x90 inch", category: "curtain_or_throw", styleTags: ["scandi_warm_indian"], priceINR: 799, description: "Off-white linen curtains for soft diffused daylight. Rod pocket.", amazonSearchQuery: "off white linen curtains set of 2 54x90 inch", visualKeyword: "off-white linen curtains", imageUrl: null },
   { id: "sw_cw_2", name: "Cream wool-blend throw with indigo tassels, 50x60 inch", category: "curtain_or_throw", styleTags: ["scandi_warm_indian"], priceINR: 1499, description: "Soft cream wool-blend throw blanket with hand-tied indigo tassels.", amazonSearchQuery: "cream wool blend throw indigo tassels 50x60 inch", visualKeyword: "cream wool indigo throw", imageUrl: null },
   { id: "sw_cw_3", name: "Handloom wool throw with subtle Kutch motif, 60x80 inch", category: "curtain_or_throw", styleTags: ["scandi_warm_indian"], priceINR: 2199, description: "Handloom wool throw in cream with low-contrast Kutch-inspired motif.", amazonSearchQuery: "handloom wool throw subtle kutch motif 60x80 inch", visualKeyword: "cream kutch wool throw", imageUrl: null },
+
+  // ---- Japandi (Japanese minimalism × Scandinavian warmth) ----
+  // Sofas
+  { id: "jp_so_1", name: "Natural oak 3-seater sofa, beige linen, low-profile, 72 inch", category: "sofa", styleTags: ["japandi"], priceINR: 18499, description: "Low-profile 3-seater on a solid natural-oak frame in beige linen.", amazonSearchQuery: "low profile 3 seater sofa oak wood beige linen 72 inch", visualKeyword: "oak beige linen sofa", imageUrl: null },
+  { id: "jp_so_2", name: "Ash-wood frame 3-seater sofa, cream linen blend, 78 inch", category: "sofa", styleTags: ["japandi"], priceINR: 27999, description: "Ash-wood frame with cream linen-blend cushions, low silhouette.", amazonSearchQuery: "low profile 3 seater sofa ash wood beige linen 78 inch", visualKeyword: "ash-wood beige linen sofa", imageUrl: null },
+  { id: "jp_so_3", name: "White oak 3-seater sofa, oatmeal cotton, low-profile, 84 inch", category: "sofa", styleTags: ["japandi"], priceINR: 41999, description: "Solid white-oak frame with oatmeal cotton upholstery, deep seat.", amazonSearchQuery: "white oak 3 seater sofa oatmeal cotton 84 inch", visualKeyword: "white oak oatmeal sofa", imageUrl: null },
+
+  // Rugs
+  { id: "jp_ru_1", name: "Natural jute area rug, hand-woven, 4x6 ft", category: "rug", styleTags: ["japandi"], priceINR: 2899, description: "Hand-woven natural jute, tight flat weave, neutral base.", amazonSearchQuery: "natural jute area rug hand woven 4x6 feet", visualKeyword: "natural jute woven rug", imageUrl: null },
+  { id: "jp_ru_2", name: "Ivory low-pile wool rug, 5x7 ft", category: "rug", styleTags: ["japandi"], priceINR: 4899, description: "Low-pile pure wool in ivory, calm neutral base for layering.", amazonSearchQuery: "ivory low pile wool rug 5x7 feet", visualKeyword: "ivory low-pile wool rug", imageUrl: null },
+  { id: "jp_ru_3", name: "Sisal-blend area rug, oatmeal, 6x9 ft", category: "rug", styleTags: ["japandi"], priceINR: 7299, description: "Sisal-and-wool blend area rug in oatmeal with bound border.", amazonSearchQuery: "sisal area rug oatmeal 6x9 feet", visualKeyword: "oatmeal sisal woven rug", imageUrl: null },
+
+  // Cushion covers
+  { id: "jp_cu_1", name: "Cream linen cushion covers, set of 2, 40x40cm", category: "cushion_cover", styleTags: ["japandi"], priceINR: 699, description: "Stone-washed linen in cream with hidden zip.", amazonSearchQuery: "cream linen cushion covers set of 2 40x40", visualKeyword: "cream linen cushions", imageUrl: null },
+  { id: "jp_cu_2", name: "Soft sage cotton cushion covers, set of 4, wabi-sabi texture, 45x45cm", category: "cushion_cover", styleTags: ["japandi"], priceINR: 1299, description: "Textured cotton in soft sage with subtle wabi-sabi weave variation.", amazonSearchQuery: "sage green cotton cushion covers set of 4 textured 45x45", visualKeyword: "sage cotton wabi-sabi cushions", imageUrl: null },
+  { id: "jp_cu_3", name: "Oatmeal linen-blend cushion covers, set of 2, 50x50cm", category: "cushion_cover", styleTags: ["japandi"], priceINR: 1799, description: "Heavier linen-blend covers in oatmeal with brass-tone zip.", amazonSearchQuery: "oatmeal linen blend cushion covers set of 2 50x50", visualKeyword: "oatmeal linen cushions", imageUrl: null },
+
+  // Lamps (floor + table — both stored under floor_lamp category)
+  { id: "jp_la_1", name: "Paper-shade table lamp, oak base, 18 inch", category: "floor_lamp", styleTags: ["japandi"], priceINR: 1999, description: "Slim oak base with rice-paper drum shade, warm 2700K bulb.", amazonSearchQuery: "table lamp paper shade oak base 18 inch", visualKeyword: "oak paper-shade table lamp", imageUrl: null },
+  { id: "jp_la_2", name: "Sculptural floor lamp, ash wood with paper lantern shade, 60 inch", category: "floor_lamp", styleTags: ["japandi"], priceINR: 3599, description: "Ash-wood column with paper lantern shade, ambient diffused light.", amazonSearchQuery: "floor lamp ash wood paper lantern shade 60 inch", visualKeyword: "ash paper-lantern lamp", imageUrl: null },
+  { id: "jp_la_3", name: "Tripod floor lamp, white oak, linen drum shade, 64 inch", category: "floor_lamp", styleTags: ["japandi"], priceINR: 4899, description: "White oak tripod with natural linen drum shade.", amazonSearchQuery: "tripod floor lamp white oak linen drum shade 64 inch", visualKeyword: "white oak linen tripod lamp", imageUrl: null },
+
+  // Wall art
+  { id: "jp_ar_1", name: "Minimalist line-art print, framed in oak, 24x36 cm", category: "wall_art", styleTags: ["japandi"], priceINR: 999, description: "Single-line figure on cream paper, slim oak frame.", amazonSearchQuery: "minimalist line art print framed oak 24x36", visualKeyword: "minimalist line-art oak frame", imageUrl: null },
+  { id: "jp_ar_2", name: "Botanical ink print, single stem, ash frame, 24x36 inch", category: "wall_art", styleTags: ["japandi"], priceINR: 1899, description: "Sumi-style botanical ink print in an ash-wood float frame.", amazonSearchQuery: "botanical ink print single stem ash frame 24x36 inch", visualKeyword: "botanical ink ash-frame print", imageUrl: null },
+  { id: "jp_ar_3", name: "Wabi-sabi ceramic wall sculpture, cream stoneware, 14 inch", category: "wall_art", styleTags: ["japandi"], priceINR: 2899, description: "Hand-thrown stoneware wall piece in cream, irregular wabi-sabi finish.", amazonSearchQuery: "ceramic wall sculpture cream wabi sabi 14 inch", visualKeyword: "cream wabi-sabi ceramic sculpture", imageUrl: null },
+
+  // Planters
+  { id: "jp_pl_1", name: "Cream stoneware planter, 8 inch", category: "planter", styleTags: ["japandi"], priceINR: 699, description: "Hand-thrown cream stoneware with drainage hole, sized for snake plant.", amazonSearchQuery: "cream stoneware planter 8 inch", visualKeyword: "cream stoneware planter", imageUrl: null },
+  { id: "jp_pl_2", name: "Wabi-sabi ceramic planter, oatmeal, 12 inch", category: "planter", styleTags: ["japandi"], priceINR: 1299, description: "Wheel-thrown ceramic with intentional surface irregularities, oatmeal glaze.", amazonSearchQuery: "wabi sabi ceramic planter oatmeal 12 inch", visualKeyword: "oatmeal wabi-sabi ceramic planter", imageUrl: null },
+  { id: "jp_pl_3", name: "Large stoneware floor planter, sand-finish, 16 inch", category: "planter", styleTags: ["japandi"], priceINR: 2199, description: "Heavy stoneware floor planter with matte sand-tone finish.", amazonSearchQuery: "large stoneware floor planter sand finish 16 inch", visualKeyword: "sand stoneware floor planter", imageUrl: null },
+
+  // Curtains (stored alongside throws under curtain_or_throw)
+  { id: "jp_cr_1", name: "Off-white linen curtains, set of 2, 54x90 inch, rod-pocket", category: "curtain_or_throw", styleTags: ["japandi"], priceINR: 899, description: "Semi-sheer off-white linen curtains, soft daylight diffusion.", amazonSearchQuery: "off white linen curtains set of 2 54x90 inch", visualKeyword: "off-white linen curtains", imageUrl: null },
+  { id: "jp_cr_2", name: "Sheer cotton-linen drapes, oatmeal, set of 2, 54x90 inch", category: "curtain_or_throw", styleTags: ["japandi"], priceINR: 1499, description: "Sheer cotton-linen blend in oatmeal, light filtering.", amazonSearchQuery: "sheer cotton linen drapes oatmeal set of 2 54x90 inch", visualKeyword: "oatmeal sheer cotton-linen drapes", imageUrl: null },
+  { id: "jp_cr_3", name: "Sand-tone heavy linen curtains, set of 2, 54x96 inch", category: "curtain_or_throw", styleTags: ["japandi"], priceINR: 2299, description: "Heavyweight linen drapes in sand tone, room-darkening lining.", amazonSearchQuery: "sand color heavy linen curtains set of 2 54x96 inch", visualKeyword: "sand heavy-linen curtains", imageUrl: null },
+
+  // Side tables
+  { id: "jp_st_1", name: "Round oak side table, 18 inch", category: "side_table", styleTags: ["japandi"], priceINR: 2499, description: "Solid oak round side table with tapered legs.", amazonSearchQuery: "round oak side table 18 inch", visualKeyword: "round oak side table", imageUrl: null },
+  { id: "jp_st_2", name: "White oak nightstand, single drawer, 16 inch", category: "side_table", styleTags: ["japandi"], priceINR: 3799, description: "White-oak nightstand with single drawer and wood pull.", amazonSearchQuery: "white oak nightstand single drawer 16 inch", visualKeyword: "white oak nightstand", imageUrl: null },
+  { id: "jp_st_3", name: "Ash pedestal side table, sculpted, 20 inch", category: "side_table", styleTags: ["japandi"], priceINR: 5499, description: "Sculpted solid-ash pedestal in a single-piece silhouette.", amazonSearchQuery: "ash wood pedestal side table sculpted 20 inch", visualKeyword: "ash pedestal side table", imageUrl: null },
+
+  // Coffee tables
+  { id: "jp_co_1", name: "Low oak coffee table, round, 32 inch", category: "coffee_table", styleTags: ["japandi"], priceINR: 4999, description: "Low-profile solid-oak round coffee table, 14-inch height.", amazonSearchQuery: "low oak coffee table round 32 inch", visualKeyword: "low oak round coffee table", imageUrl: null },
+  { id: "jp_co_2", name: "Round white oak coffee table, 40 inch", category: "coffee_table", styleTags: ["japandi"], priceINR: 8499, description: "Round white-oak top with a slim cylindrical pedestal base.", amazonSearchQuery: "white oak round coffee table 40 inch", visualKeyword: "white oak round coffee table", imageUrl: null },
+  { id: "jp_co_3", name: "Ash live-edge coffee table, 48 inch", category: "coffee_table", styleTags: ["japandi"], priceINR: 13499, description: "Live-edge solid ash slab on minimal blackened-steel base.", amazonSearchQuery: "ash live edge coffee table 48 inch", visualKeyword: "ash live-edge coffee table", imageUrl: null },
+
+  // Throws (stored under curtain_or_throw)
+  { id: "jp_th_1", name: "Waffle-knit cotton throw, cream, 50x60 inch", category: "curtain_or_throw", styleTags: ["japandi"], priceINR: 1099, description: "Waffle-weave cotton throw in cream, machine-washable.", amazonSearchQuery: "waffle knit cotton throw cream 50x60 inch", visualKeyword: "cream waffle-knit cotton throw", imageUrl: null },
+  { id: "jp_th_2", name: "Oatmeal wool-blend throw blanket, 50x70 inch", category: "curtain_or_throw", styleTags: ["japandi"], priceINR: 1599, description: "Soft wool-blend throw in oatmeal with hand-tied fringe.", amazonSearchQuery: "oatmeal wool blend throw blanket 50x70 inch", visualKeyword: "oatmeal wool-blend throw", imageUrl: null },
+  { id: "jp_th_3", name: "Heavy-knit ivory throw, chunky cotton, 60x80 inch", category: "curtain_or_throw", styleTags: ["japandi"], priceINR: 2299, description: "Chunky-knit ivory cotton throw, heavy hand for cool evenings.", amazonSearchQuery: "heavy knit ivory throw chunky cotton 60x80 inch", visualKeyword: "ivory chunky-knit cotton throw", imageUrl: null },
 ];
 
 // ---- Helpers ----
