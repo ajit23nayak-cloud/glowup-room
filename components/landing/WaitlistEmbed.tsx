@@ -18,9 +18,9 @@ export default function WaitlistEmbed() {
 
   return (
     <div className="bg-card border border-border rounded-3xl p-10 max-w-[520px] mx-auto shadow-[0_4px_24px_rgba(26,26,26,0.04)]">
-      <h3 className="font-serif text-2xl mb-2">Get early access</h3>
+      <h3 className="font-serif text-2xl mb-2">Get product updates</h3>
       <p className="text-[15px] text-ink-muted mb-6">
-        We&apos;ll email you the moment it goes live. Shareable before/after guaranteed.
+        We&apos;ll email you when we ship new styles or features.
       </p>
       <div className="min-h-[180px]">
         <iframe
