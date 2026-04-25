@@ -1,6 +1,5 @@
 "use client";
 import BeforeAfterSlider from "@/components/BeforeAfterSlider";
-import WaitlistEmbed from "./WaitlistEmbed";
 import { capture } from "@/lib/posthog";
 
 export default function Hero() {
@@ -8,7 +7,7 @@ export default function Hero() {
     <section className="py-20 text-center">
       <div className="mx-auto max-w-content px-6">
         <div className="inline-block mb-6 px-3.5 py-1.5 rounded-full bg-accent/10 text-accent text-[13px] font-semibold uppercase tracking-[0.12em]">
-          🪄 Launching Saturday, 25 April · Free for the first 500
+          ✨ Live now · Free first render
         </div>
         <h1 className="font-serif font-normal leading-[1.05] tracking-[-0.02em] mb-6 text-[clamp(40px,7vw,72px)]">
           DecorGPT
@@ -35,10 +34,9 @@ export default function Hero() {
             onClick={() => capture("landing_try_clicked", { section: "hero" })}
             className="inline-block rounded-full bg-accent text-white font-semibold px-8 py-4 hover:opacity-90 transition-opacity"
           >
-            Try it now →
+            Try it free →
           </a>
         </div>
-        <WaitlistEmbed />
       </div>
     </section>
   );
