@@ -1,4 +1,5 @@
 import { mutation, query } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { ConvexError, v } from "convex/values";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -72,6 +73,12 @@ export const submitUTR = mutation({
     await ctx.db.patch(signup._id, {
       paidTier: true,
       paidTierExpiresAt: now + DAY_MS,
+    });
+
+    // Best-effort confirmation email. Schedule on the side so a Resend hiccup
+    // never blocks the user's activation.
+    await ctx.scheduler.runAfter(0, internal.emails.sendUtrConfirmation, {
+      email,
     });
 
     return { paymentId, signupId: signup._id, expiresAt: now + DAY_MS };

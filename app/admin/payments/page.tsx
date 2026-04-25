@@ -42,11 +42,43 @@ async function signOutAction() {
   redirect("/admin/login");
 }
 
+async function resetSignupAction(formData: FormData): Promise<void> {
+  "use server";
+  const email = (formData.get("email") as string)?.trim();
+  if (!email) return;
+  const pw = process.env.ADMIN_PASSWORD;
+  if (!pw) throw new Error("ADMIN_PASSWORD not configured");
+  const client = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+  const r = await client.mutation(api.signups.adminResetByEmail, {
+    adminSecret: pw,
+    email,
+  });
+  redirect(`/admin/payments?reset=${encodeURIComponent(email)}&n=${r.resetCount}`);
+}
+
+async function deleteSignupAction(formData: FormData): Promise<void> {
+  "use server";
+  const email = (formData.get("email") as string)?.trim();
+  if (!email) return;
+  const pw = process.env.ADMIN_PASSWORD;
+  if (!pw) throw new Error("ADMIN_PASSWORD not configured");
+  const client = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+  const r = await client.mutation(api.signups.adminDeleteByEmail, {
+    adminSecret: pw,
+    email,
+  });
+  redirect(`/admin/payments?deleted=${encodeURIComponent(email)}&n=${r.deletedCount}`);
+}
+
 function fmtDate(ms: number): string {
   return new Date(ms).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", hour12: false });
 }
 
-export default async function AdminPaymentsPage() {
+export default async function AdminPaymentsPage({
+  searchParams,
+}: {
+  searchParams: { reset?: string; deleted?: string; n?: string };
+}) {
   if (!isAdminAuthed()) redirect("/admin/login");
   const pw = process.env.ADMIN_PASSWORD!;
   const client = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
@@ -54,6 +86,11 @@ export default async function AdminPaymentsPage() {
     client.query(api.payments.listPending, { adminSecret: pw }),
     client.query(api.payments.listRecent, { adminSecret: pw }),
   ]);
+  const flash = searchParams.reset
+    ? `Reset ${searchParams.n ?? "?"} signup row(s) for ${searchParams.reset}.`
+    : searchParams.deleted
+      ? `Deleted ${searchParams.n ?? "?"} signup row(s) for ${searchParams.deleted}.`
+      : null;
 
   return (
     <main className="min-h-screen bg-bg">
@@ -71,6 +108,65 @@ export default async function AdminPaymentsPage() {
       </header>
 
       <section className="mx-auto max-w-5xl px-6 py-10">
+        {flash && (
+          <div className="mb-8 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-[14px] text-emerald-900">
+            {flash}
+          </div>
+        )}
+
+        <h2 className="font-serif text-2xl mb-4">Signup tools</h2>
+        <div className="bg-card border border-border rounded-2xl p-5 mb-12 space-y-4">
+          <div>
+            <label className="block text-[13px] uppercase tracking-[0.12em] text-ink-muted mb-2">
+              Reset signup for testing
+            </label>
+            <form action={resetSignupAction} className="flex gap-2 flex-wrap">
+              <input
+                type="email"
+                name="email"
+                placeholder="email@example.com"
+                required
+                className="flex-1 min-w-[240px] rounded-lg border border-border bg-bg px-3 py-2 text-[14px]"
+              />
+              <button
+                type="submit"
+                className="rounded-lg bg-ink text-white font-semibold px-4 py-2 text-[13px]"
+              >
+                Reset (free tier)
+              </button>
+            </form>
+            <p className="mt-2 text-[12px] text-ink-muted">
+              Sets rendersCompleted=0, paidTier=false, paidTierExpiresAt=undefined,
+              rendersInProgress=0, failedRenderAttempts=0. Backfills emailNormalized.
+            </p>
+          </div>
+          <div>
+            <label className="block text-[13px] uppercase tracking-[0.12em] text-ink-muted mb-2">
+              Hard-delete signup (test typos only)
+            </label>
+            <form action={deleteSignupAction} className="flex gap-2 flex-wrap">
+              <input
+                type="email"
+                name="email"
+                placeholder="email@example.com"
+                required
+                className="flex-1 min-w-[240px] rounded-lg border border-border bg-bg px-3 py-2 text-[14px]"
+              />
+              <button
+                type="submit"
+                className="rounded-lg bg-accent text-white font-semibold px-4 py-2 text-[13px]"
+              >
+                Delete signup row
+              </button>
+            </form>
+            <p className="mt-2 text-[12px] text-ink-muted">
+              Removes the signup entirely. Use only for clearly-bogus test typos.
+              Renders / payments referencing this signup will keep their
+              foreign-key references but be orphaned.
+            </p>
+          </div>
+        </div>
+
         <h2 className="font-serif text-2xl mb-4">
           Pending verification ({pending.length})
         </h2>

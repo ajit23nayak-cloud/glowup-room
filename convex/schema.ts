@@ -3,14 +3,18 @@ import { v } from "convex/values";
 
 export default defineSchema({
   signups: defineTable({
-    email: v.string(),
+    email: v.string(), // raw, for display
+    emailNormalized: v.optional(v.string()), // canonical key — gates query against this
     createdAt: v.number(),
     source: v.union(v.literal("landing"), v.literal("try")),
     rendersCompleted: v.optional(v.number()),
+    rendersInProgress: v.optional(v.number()),
     failedRenderAttempts: v.optional(v.number()),
     paidTier: v.optional(v.boolean()),
     paidTierExpiresAt: v.optional(v.number()),
-  }).index("by_email", ["email"]),
+  })
+    .index("by_email", ["email"])
+    .index("by_emailNormalized", ["emailNormalized"]),
 
   payments: defineTable({
     email: v.string(),

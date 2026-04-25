@@ -137,6 +137,11 @@ export default function GalleryClient({ id }: { id: string }) {
           </div>
         </div>
       )}
+      <p className="mt-16 text-center text-[12px] text-ink-soft">
+        <a href="/terms" className="hover:text-ink-dim">Terms</a>
+        <span className="mx-2">·</span>
+        <a href="/privacy" className="hover:text-ink-dim">Privacy</a>
+      </p>
     </main>
   );
 }

@@ -147,7 +147,10 @@ export default function UpgradeClient() {
             Use the same email as your free glow-up so we activate the right account.
           </p>
 
-          <h2 className="font-serif text-2xl mb-6">2. Pay ₹99 via UPI</h2>
+          <h2 className="font-serif text-2xl mb-2">2. Pay ₹99 via UPI</h2>
+          <p className="text-[13px] text-ink-muted mb-6">
+            We&apos;re a small team — UPI is our only option for now. Card payments coming soon.
+          </p>
 
           <div className="grid md:grid-cols-2 gap-6 mb-8">
             {/* Mobile-first UPI intent button */}
@@ -274,6 +277,29 @@ export default function UpgradeClient() {
               </li>
             ))}
           </ul>
+        </div>
+
+        <div className="mt-10 bg-card border border-border rounded-3xl p-6 md:p-8">
+          <h3 className="font-serif text-lg mb-2">Already paid but lost the UTR?</h3>
+          <p className="text-[14px] text-ink-dim leading-relaxed">
+            Submit your UTR within 24 hours of payment to activate. If you can&apos;t find it,
+            WhatsApp{" "}
+            {WHATSAPP_NUMBER ? (
+              <a
+                href={`https://wa.me/${WHATSAPP_NUMBER.replace(/\D/g, "")}?text=${encodeURIComponent(
+                  "GlowUp99 — paid but lost the UTR. Sending screenshot.",
+                )}`}
+                target="_blank"
+                rel="noopener"
+                className="text-accent font-semibold hover:underline"
+              >
+                +{WHATSAPP_NUMBER}
+              </a>
+            ) : (
+              "us"
+            )}{" "}
+            with your payment screenshot — we&apos;ll activate within 5 min.
+          </p>
         </div>
 
         <p className="text-center text-[14px] text-ink-muted mt-10">

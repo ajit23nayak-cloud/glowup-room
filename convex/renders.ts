@@ -1,5 +1,6 @@
 import { mutation, query, internalMutation } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
+import { internal } from "./_generated/api";
 
 export const create = mutation({
   args: {
@@ -9,18 +10,23 @@ export const create = mutation({
     budget: v.string(),
   },
   handler: async (ctx, args) => {
-    // Paywall gate — 1 free successful render per email.
-    const signup = await ctx.db.get(args.signupId);
-    if (!signup) throw new ConvexError({ code: "signup_missing" });
-    const rendersCompleted = signup.rendersCompleted ?? 0;
-    const paidTier = signup.paidTier ?? false;
-    const expiresAt = signup.paidTierExpiresAt;
-    const paidActive = paidTier && (!expiresAt || expiresAt > Date.now());
-    if (rendersCompleted >= 1 && !paidActive) {
+    // Atomically acquire a render slot — fuses the paywall gate (rendersCompleted
+    // >= 1 && !paidActive) with the in-progress race guard (rendersInProgress > 0).
+    const slot = await ctx.runMutation(internal.signups.tryAcquireRenderSlot, {
+      id: args.signupId,
+    });
+    if (!slot.ok) {
+      if (slot.code === "in_progress") {
+        throw new ConvexError({
+          code: "render_in_progress",
+          message: "A render is already running on your account. Wait for it to finish.",
+        });
+      }
+      // paywall
       throw new ConvexError({
         code: "paywall",
         upgradeUrl: "/upgrade",
-        rendersCompleted,
+        rendersCompleted: slot.rendersCompleted,
       });
     }
     return await ctx.db.insert("renders", {
@@ -63,15 +69,22 @@ export const setStatus = internalMutation({
     const render = await ctx.db.get(id);
     if (!render) return;
     const wasComplete = render.status === "complete";
+    const wasFailed = render.status === "failed";
     const completed = status === "complete" || status === "failed";
-    const clearOnRetry = status === "processing" ? { errorMessage: undefined, afterImageUrl: undefined } : {};
+    const clearOnRetry =
+      status === "processing"
+        ? { errorMessage: undefined, afterImageUrl: undefined }
+        : {};
     await ctx.db.patch(id, {
       status,
       ...clearOnRetry,
       ...patch,
       ...(completed ? { completedAt: Date.now() } : {}),
     });
-    // Only increment the signup's free-render counter on first successful complete.
+
+    // First successful complete bumps the signup's rendersCompleted (locks the
+    // free render). Subsequent completes (e.g. retries that already succeeded)
+    // are no-ops thanks to the wasComplete guard.
     if (status === "complete" && !wasComplete && render.signupId) {
       const signup = await ctx.db.get(render.signupId);
       if (signup) {
@@ -80,15 +93,27 @@ export const setStatus = internalMutation({
         });
       }
     }
-    // Track failed render attempts per signup — protects Replicate budget from
-    // runaway retries on a broken render. UI caps retry button at 3.
-    if (status === "failed" && render.status !== "failed" && render.signupId) {
+
+    // Track failed attempts to cap retries at 3 in the gallery UI.
+    if (status === "failed" && !wasFailed && render.signupId) {
       const signup = await ctx.db.get(render.signupId);
       if (signup) {
         await ctx.db.patch(render.signupId, {
           failedRenderAttempts: (signup.failedRenderAttempts ?? 0) + 1,
         });
       }
+    }
+
+    // Release the in-progress slot when the render leaves the pending/processing
+    // states. Guard against double-release on transitions complete→complete or
+    // failed→failed (idempotent setStatus calls).
+    const leftInProgress =
+      (status === "complete" && !wasComplete) ||
+      (status === "failed" && !wasFailed);
+    if (leftInProgress && render.signupId) {
+      await ctx.runMutation(internal.signups.releaseRenderSlot, {
+        id: render.signupId,
+      });
     }
   },
 });

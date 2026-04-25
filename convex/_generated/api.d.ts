@@ -8,11 +8,13 @@
  * @module
  */
 
+import type * as emails from "../emails.js";
 import type * as files from "../files.js";
 import type * as payments from "../payments.js";
 import type * as renders from "../renders.js";
 import type * as replicate from "../replicate.js";
 import type * as signups from "../signups.js";
+import type * as signupsNode from "../signupsNode.js";
 
 import type {
   ApiFromModules,
@@ -21,11 +23,13 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  emails: typeof emails;
   files: typeof files;
   payments: typeof payments;
   renders: typeof renders;
   replicate: typeof replicate;
   signups: typeof signups;
+  signupsNode: typeof signupsNode;
 }>;
 
 /**

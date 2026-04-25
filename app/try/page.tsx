@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation, useAction } from "convex/react";
+import { useMutation, useAction, useQuery } from "convex/react";
 import { ConvexError } from "convex/values";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -10,15 +10,43 @@ import StylePicker from "@/components/try/StylePicker";
 import BudgetChips from "@/components/try/BudgetChips";
 import { capture, identify } from "@/lib/posthog";
 import type { Style, Budget } from "@/lib/styles";
+import { EMAIL_REGEX } from "@/lib/normalizeEmail";
 
-type PaywallPayload = { code: "paywall"; upgradeUrl: string; rendersCompleted?: number };
-function paywallPayload(e: unknown): PaywallPayload | null {
+type ConvexErrorData = {
+  code?: string;
+  message?: string;
+  upgradeUrl?: string;
+  rendersCompleted?: number;
+};
+function readConvexError(e: unknown): ConvexErrorData | null {
   if (!(e instanceof ConvexError)) return null;
-  const data = (e as ConvexError<{ code?: string; upgradeUrl?: string; rendersCompleted?: number }>).data;
-  if (data && typeof data === "object" && data.code === "paywall" && typeof data.upgradeUrl === "string") {
-    return { code: "paywall", upgradeUrl: data.upgradeUrl, rendersCompleted: data.rendersCompleted };
-  }
-  return null;
+  const data = (e as ConvexError<ConvexErrorData>).data;
+  return data && typeof data === "object" ? data : null;
+}
+
+async function emailHash(email: string): Promise<string> {
+  if (typeof crypto === "undefined" || !crypto.subtle) return "";
+  const buf = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(email.trim().toLowerCase()),
+  );
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 12);
+}
+
+function fmtExpiry(ms: number | null | undefined): string {
+  if (!ms) return "soon";
+  const d = new Date(ms);
+  return d.toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
 }
 
 export default function TryPage() {
@@ -27,19 +55,58 @@ export default function TryPage() {
   const [style, setStyle] = useState<Style | null>(null);
   const [budget, setBudget] = useState<Budget | null>(null);
   const [email, setEmail] = useState("");
+  const [debouncedEmail, setDebouncedEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const createSignup = useMutation(api.signups.createOrGet);
+  const createSignup = useAction(api.signupsNode.createOrGet);
   const createRender = useMutation(api.renders.create);
   const startRender = useAction(api.replicate.startRender);
+
+  // Debounce email by 500ms before kicking off the inline-paywall query
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedEmail(email), 500);
+    return () => clearTimeout(t);
+  }, [email]);
+
+  const emailValid = EMAIL_REGEX.test(email.trim());
+  // Only fire getSignupStatus when the debounced email is well-formed —
+  // saves the round-trip when the user is mid-typing.
+  const statusArgs = useMemo(
+    () =>
+      EMAIL_REGEX.test(debouncedEmail.trim())
+        ? { email: debouncedEmail.trim() }
+        : "skip",
+    [debouncedEmail],
+  );
+  const signupStatus = useQuery(api.signups.getSignupStatus, statusArgs as { email: string });
+
+  // PostHog event when a non-trivial paywall banner appears
+  useEffect(() => {
+    if (!signupStatus) return;
+    if (
+      signupStatus.status === "free_used" ||
+      signupStatus.status === "paid_active" ||
+      signupStatus.status === "paid_expired"
+    ) {
+      void emailHash(debouncedEmail).then((h) =>
+        capture("paywall_inline_shown", {
+          email_hash: h,
+          status: signupStatus.status,
+        }),
+      );
+    }
+  }, [signupStatus?.status, debouncedEmail]);
 
   useEffect(() => {
     capture("try_started");
   }, []);
 
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const canSubmit = Boolean(storageId && style && budget && emailValid && !submitting);
+  const blocked =
+    signupStatus?.status === "free_used" || signupStatus?.status === "paid_expired";
+  const canSubmit = Boolean(
+    storageId && style && budget && emailValid && !submitting && !blocked,
+  );
 
   const onUploaded = (id: Id<"_storage">) => {
     setStorageId(id);
@@ -51,10 +118,10 @@ export default function TryPage() {
     setErr(null);
     setSubmitting(true);
     try {
-      const signupId = await createSignup({ email, source: "try" });
+      const result = await createSignup({ email, source: "try" });
       identify(email);
       const renderId = await createRender({
-        signupId,
+        signupId: result.signupId as Id<"signups">,
         beforeStorageId: storageId,
         style,
         budget,
@@ -63,17 +130,22 @@ export default function TryPage() {
       await startRender({ renderId, beforeStorageId: storageId, style });
       router.push(`/gallery/${renderId}`);
     } catch (e: unknown) {
-      const pw = paywallPayload(e);
-      if (pw) {
+      const data = readConvexError(e);
+      if (data?.code === "paywall" && data.upgradeUrl) {
         capture("paywall_hit", {
           from: "try_submit",
-          rendersCompleted: pw.rendersCompleted ?? null,
+          rendersCompleted: data.rendersCompleted ?? null,
           email,
         });
-        router.push(`${pw.upgradeUrl}?from=try&email=${encodeURIComponent(email)}`);
+        router.push(`${data.upgradeUrl}?from=try&email=${encodeURIComponent(email)}`);
         return;
       }
-      setErr(e instanceof Error ? e.message : "something went wrong");
+      // Surface specific server-validated email/upload errors with their messages
+      if (data?.message) {
+        setErr(data.message);
+      } else {
+        setErr(e instanceof Error ? e.message : "Something went wrong");
+      }
       setSubmitting(false);
     }
   };
@@ -84,8 +156,12 @@ export default function TryPage() {
         ← GlowUp.room
       </a>
       <h1 className="font-serif text-4xl mt-4 mb-2">Your glow-up</h1>
-      <p className="text-ink-muted mb-10">
+      <p className="text-ink-muted mb-4">
         Upload a photo of your living room. Pick a vibe and a budget. We&apos;ll email you the result.
+      </p>
+
+      <p className="inline-block mb-10 text-[12px] text-accent uppercase tracking-[0.12em] font-semibold border border-accent/30 bg-accent/5 rounded-full px-3 py-1">
+        First render free per email · ₹99 unlocks unlimited for 24h
       </p>
 
       <div className="space-y-8">
@@ -112,6 +188,7 @@ export default function TryPage() {
             placeholder="you@example.com"
             className="w-full rounded-xl border border-border bg-card px-4 py-3 focus:outline-none focus:border-accent"
           />
+          <InlinePaywallBanner status={signupStatus} email={email} />
         </section>
         <button
           onClick={submit}
@@ -122,6 +199,59 @@ export default function TryPage() {
         </button>
         {err && <p className="text-sm text-accent">{err}</p>}
       </div>
+      <p className="mt-12 text-center text-[12px] text-ink-soft">
+        <a href="/terms" className="hover:text-ink-dim">Terms</a>
+        <span className="mx-2">·</span>
+        <a href="/privacy" className="hover:text-ink-dim">Privacy</a>
+      </p>
     </main>
+  );
+}
+
+function InlinePaywallBanner({
+  status,
+  email,
+}: {
+  status:
+    | {
+        status: "new" | "free_used" | "paid_active" | "paid_expired" | "invalid_format";
+        rendersCompleted: number;
+        paidTierExpiresAt: number | null;
+      }
+    | undefined;
+  email: string;
+}) {
+  if (!status) return null;
+  if (status.status === "new" || status.status === "invalid_format") return null;
+
+  const upgradeHref = `/upgrade?email=${encodeURIComponent(email)}&from=try-inline`;
+
+  if (status.status === "paid_active") {
+    return (
+      <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[14px] text-emerald-900">
+        <strong>You&apos;re paid through {fmtExpiry(status.paidTierExpiresAt)}.</strong>{" "}
+        Generate as many as you want.
+      </div>
+    );
+  }
+  if (status.status === "free_used") {
+    return (
+      <div className="mt-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-[14px] text-ink-dim">
+        <strong className="text-ink">You&apos;ve already used your free glow-up with this email.</strong>{" "}
+        Unlock unlimited renders for 24 hours — ₹99 via UPI.{" "}
+        <a href={upgradeHref} className="text-accent font-semibold underline">
+          Continue to upgrade →
+        </a>
+      </div>
+    );
+  }
+  // paid_expired
+  return (
+    <div className="mt-3 rounded-xl border border-accent/30 bg-accent/5 px-4 py-3 text-[14px] text-ink-dim">
+      <strong className="text-ink">Your 24h window expired.</strong> Renew for ₹99.{" "}
+      <a href={upgradeHref} className="text-accent font-semibold underline">
+        Renew →
+      </a>
+    </div>
   );
 }
