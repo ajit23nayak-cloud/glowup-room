@@ -1,6 +1,8 @@
 # GlowUp Room
 
-![GlowUp Room](docs/glowup-home.jpg)
+![Before and after, one room](docs/render.png)
+
+Drag the handle to reveal. Left is the photo you upload, right is what the model returns, with matching Amazon India products picked to go with it.
 
 [glowup-room.vercel.app](https://glowup-room.vercel.app)
 
