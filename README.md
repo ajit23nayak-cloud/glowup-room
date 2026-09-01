@@ -33,7 +33,3 @@ You will need a Convex deployment and a Replicate API token in your environment.
 ## Status
 
 MVP. Built in a single sprint to get the upload to render to share loop working end to end.
-
-## Author
-
-Ajit Nayak. [linkedin.com/in/ajit-nayak](https://linkedin.com/in/ajit-nayak)
