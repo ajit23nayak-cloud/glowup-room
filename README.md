@@ -1,5 +1,9 @@
 # GlowUp Room
 
+![GlowUp Room](docs/glowup-home.jpg)
+
+[glowup-room.vercel.app](https://glowup-room.vercel.app)
+
 Upload a photo of a room, pick a style and a budget, get an AI render of what it could look like, and a shareable link to the result.
 
 ## Flow
